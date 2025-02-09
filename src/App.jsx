@@ -1,16 +1,25 @@
-import React,{ useState } from 'react'
-import "./index.css"; // Ensure Tailwind is applied globally
-import Hero from './components/hero'
-import './App.css'
+import React, { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import "./index.css";
+import Hero from './components/components/hero';
+import MockInterview from './components/pages/mock';
+import Features from './components/components/features';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
   return (
-    <>
-    <Hero/>
-    </>
+    <Routes>
+      <Route path="/" element={
+        <>
+          <Hero />
+          <Features />
+        </>
+      } />
+      <Route path="/mock-interview" element={<MockInterview />} />
+    </Routes>
   );
 }
 
-export default App
+export default App;

@@ -15,7 +15,7 @@ const Hero = () => {
         <main className="flex-1 flex items-center justify-center">
           <div className="max-w-4xl mx-auto text-center px-4">
             <h1 className="text-4xl md:text-6xl font-mono text-white mb-6">
-             Interview pal :<span className="italic">Your personal</span> AI buddy
+             Interview pal: <span className="italic">Your personal</span> AI buddy
              <br/>
               
               for Job prep
