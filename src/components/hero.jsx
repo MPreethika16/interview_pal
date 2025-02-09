@@ -1,12 +1,14 @@
 import React from 'react';
 import { Moon } from 'lucide-react';
+import { BrowserRouter } from 'react-router-dom';
+
 import { useNavigate } from 'react-router-dom';
 
 const Hero = () => {
   const navigate = useNavigate();
 
   const handleSignUp = () => {
-    navigate('/login');
+    navigate('./login');
   };
 
   return (
