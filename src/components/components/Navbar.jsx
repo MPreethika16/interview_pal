@@ -57,12 +57,7 @@ const Navbar = () => {
             >
               Features
             </button>
-            <button
-              onClick={() => scrollToSection('documentation')}
-              className="hover:text-white transition-colors duration-200"
-            >
-              Documentation
-            </button>
+            
             <button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2 px-4 py-2 transition-colors duration-200">
               <span>Sign Up</span>
               <span className="ml-1">↗</span>
@@ -93,12 +88,6 @@ const Navbar = () => {
                   className="block w-full text-left px-4 py-3 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors duration-200"
                 >
                   Features
-                </button>
-                <button
-                  onClick={() => scrollToSection('documentation')}
-                  className="block w-full text-left px-4 py-3 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors duration-200"
-                >
-                  Documentation
                 </button>
                 <button className="block w-full text-left px-4 py-3 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors duration-200">
                   <span className="flex items-center gap-2">

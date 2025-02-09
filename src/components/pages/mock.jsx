@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import { ArrowRight, Send } from 'lucide-react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// API key should ideally be handled securely through environment variables
-// For demo purposes, we'll store it directly (not recommended for production)
-const GEMINI_API_KEY = "AIzaSyBtbx2E0VnXPKU0eJZMpnJWk9D0lyhfL_I";
+const GEMINI_API_KEY1 = "AIzaSyBtbx2E0VnXPKU0eJZMpnJWk9D0lyhfL_I";
 
 const MockInterview = () => {
   const [formData, setFormData] = useState({
     workExperience: '',
     skills: '',
+    jobRole: '',
     jobDescription: ''
   });
   const [messages, setMessages] = useState([]);
@@ -18,7 +17,6 @@ const MockInterview = () => {
   const [error, setError] = useState('');
   const [interviewStarted, setInterviewStarted] = useState(false);
 
-  // Initialize Gemini AI
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
@@ -40,16 +38,18 @@ const MockInterview = () => {
         `You are an interviewer conducting a job interview. Based on the following details:
         Work Experience: ${formData.workExperience}
         Skills: ${formData.skills}
+        Job Role: ${formData.jobRole}
         Job Description: ${formData.jobDescription}
         
         Act as the interviewer and ask one question at a time. Start with an introduction and your first question.
         Make the questions challenging but relevant to the provided job description and skills.
         Be conversational and respond naturally to the candidate's answers.
         Mix both technical and behavioral questions.` :
-        `You are conducting a job interview for a software developer position. 
+        `You are conducting a job interview for a ${formData.jobRole || 'Software Developer'} position. 
         Start by introducing yourself briefly and ask your first question.
         Keep your responses concise and ask one question at a time.
-        Mix technical and behavioral questions naturally.`;
+        Mix technical and behavioral questions naturally.
+        Ask only the question without any additional commentary.`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -75,7 +75,6 @@ const MockInterview = () => {
     setUserInput('');
     setLoading(true);
 
-    // Add user's message
     setMessages(prev => [...prev, {
       role: 'Candidate',
       text: userMessage
@@ -86,7 +85,7 @@ const MockInterview = () => {
         `${msg.role}: ${msg.text}`
       ).join('\n');
 
-      const prompt = `Previous conversation:\n${chatHistory}\n\nCandidate: ${userMessage}\n\nBased on the candidate's response, evaluate their answer briefly if needed and ask your next interview question. Keep your response focused and clear. Mix technical and behavioral questions naturally. Ask one question at a time.`;
+      const prompt = `Previous conversation:\n${chatHistory}\n\nCandidate: ${userMessage}\n\nBased on the candidate's response, ask your next interview question. Keep the response focused and clear. Ask only one question at a time without any additional commentary or evaluation. The question should be relevant to the ${formData.jobRol} position.`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -110,6 +109,17 @@ const MockInterview = () => {
         <h3 className="text-xl font-mono text-white mb-4">Background Information (Optional)</h3>
         <div className="space-y-4">
           <div>
+            <label className="block text-gray-300 mb-2">Job Role</label>
+            <input
+              type="text"
+              name="jobRole"
+              value={formData.jobRole}
+              onChange={handleInputChange}
+              className="w-full bg-slate-700 text-white rounded-lg p-3 border border-slate-600"
+              placeholder="Enter the job role (e.g., Software Developer, Product Manager)"
+            />
+          </div>
+          <div>
             <label className="block text-gray-300 mb-2">Work Experience</label>
             <textarea
               name="workExperience"
@@ -128,7 +138,7 @@ const MockInterview = () => {
               onChange={handleInputChange}
               className="w-full bg-slate-700 text-white rounded-lg p-3 border border-slate-600"
               rows="4"
-              placeholder="List your skills..."
+              placeholder="List your relevant skills..."
             />
           </div>
           <div>

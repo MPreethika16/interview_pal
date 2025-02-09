@@ -33,7 +33,6 @@ const Hero = () => {
           </div>
         </main>
       </div>
-      <Features/>
     </div>
   );
 };

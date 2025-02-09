@@ -26,7 +26,12 @@ const Features = () => {
     navigate('/mock-interview');
   };
 
+const handleResourcesClick= () =>{
+  navigate('/resources')
+}
+
   return (
+    <div className='section1'>
     <div className="bg-slate-900 min-h-screen flex flex-col justify-center px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
@@ -55,11 +60,14 @@ const Features = () => {
             title="Centralized Preparation Hub"
             description="Access a one-stop resource center with templates, industry insights, and preparation guides to streamline your job search process."
           />
+          
 
           <FeatureCard
             icon={<ClipboardList className="text-yellow-400 w-6 h-6" />}
             title="Job Description-Based Resources"
             description="Simply upload a job description to receive tailored study materials, practice questions, and key skills to focus on."
+            onClick={handleResourcesClick}
+            isClickable={true}
           />
 
           <FeatureCard
@@ -69,6 +77,7 @@ const Features = () => {
           />
         </div>
       </div>
+    </div>
     </div>
   );
 };
