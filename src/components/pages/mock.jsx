@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowRight, Send } from 'lucide-react';
+import { Send, ArrowRight } from 'lucide-react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const GEMINI_API_KEY1 = "AIzaSyBtbx2E0VnXPKU0eJZMpnJWk9D0lyhfL_I";
+// Replace with your actual API key
+const GEMINI_API_KEY = "AIzaSyBtbx2E0VnXPKU0eJZMpnJWk9D0lyhfL_I";
 
 const MockInterview = () => {
   const [formData, setFormData] = useState({
@@ -17,6 +18,7 @@ const MockInterview = () => {
   const [error, setError] = useState('');
   const [interviewStarted, setInterviewStarted] = useState(false);
 
+  // Initialize the model
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
@@ -29,27 +31,42 @@ const MockInterview = () => {
   };
 
   const startInterview = async (e) => {
-    if (e) e.preventDefault();
+    e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const prompt = formData.workExperience ? 
-        `You are an interviewer conducting a job interview. Based on the following details:
-        Work Experience: ${formData.workExperience}
-        Skills: ${formData.skills}
-        Job Role: ${formData.jobRole}
-        Job Description: ${formData.jobDescription}
-        
-        Act as the interviewer and ask one question at a time. Start with an introduction and your first question.
-        Make the questions challenging but relevant to the provided job description and skills.
-        Be conversational and respond naturally to the candidate's answers.
-        Mix both technical and behavioral questions.` :
-        `You are conducting a job interview for a ${formData.jobRole || 'Software Developer'} position. 
-        Start by introducing yourself briefly and ask your first question.
-        Keep your responses concise and ask one question at a time.
-        Mix technical and behavioral questions naturally.
-        Ask only the question without any additional commentary.`;
+      const prompt = `You are an experienced technical interviewer named Interview Pal. Based on the following candidate details:
+      - Work Experience: ${formData.workExperience}
+      - Skills: ${formData.skills}
+      - Job Role: ${formData.jobRole}
+      - Job Description: ${formData.jobDescription}
+      
+      **Instructions:**
+      1. **Start with a warm, professional introduction** (1-2 sentences).
+      2. **Begin with basic, introductory questions** to make the candidate comfortable (e.g., about their background, interest in the role, or general experience).
+      3. **Gradually transition to role-specific questions** based on the job description and required skills.
+      4. **Finally, ask experience-based questions** that dive into their past work, projects, and achievements.
+      5. **Keep the tone conversational and professional**—like a real human interviewer.
+      6. **Ask only one question at a time** and wait for the candidate’s response before moving to the next question.
+      7. **Focus on their skills, experience, and the job requirements** to make the questions relevant and personalized.
+      8. **Avoid explanations or long preambles**—just ask the question naturally.
+      
+      **Flow of the Interview:**
+      1. **Introductory Questions** (e.g., background, interest in the role).
+      2. **Role-Specific Questions** (e.g., technical skills, tools, or methodologies relevant to the job).
+      3. **Experience-Based Questions** (e.g., past projects, challenges, and achievements).
+      
+      **Example Output:**
+      "Hi, I'm Interview Pal. Thanks for joining me today! Let’s start with a quick introduction—can you tell me a little about yourself and what drew you to this role?"
+      
+      ---
+      
+     ### **Key Adjustments:**
+1. **Natural Flow:** The interview now progresses logically—starting with basic intro questions, then moving to role-specific questions, and finally diving into experience-based questions.
+2. **Human-Like Tone:** The tone is conversational and professional, mimicking a real interviewer.
+3. **One Question at a Time:** Ensures the candidate has time to respond before the next question is asked.
+4. **Personalized Questions:** Questions are tailored to the candidate’s skills, experience, and job role.`
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -57,7 +74,7 @@ const MockInterview = () => {
 
       setMessages([{
         role: 'Interviewer',
-        text: text
+        text: text || `Hello! I'm conducting interviews for the ${formData.jobRole} position. Based on your background, let's start with a technical question related to ${formData.skills.split(',')[0]}.`
       }]);
       setInterviewStarted(true);
     } catch (err) {
@@ -83,82 +100,117 @@ const MockInterview = () => {
     try {
       const chatHistory = messages.map(msg => 
         `${msg.role}: ${msg.text}`
-      ).join('\n');
+      ).join('\n\n');
 
-      const prompt = `Previous conversation:\n${chatHistory}\n\nCandidate: ${userMessage}\n\nBased on the candidate's response, ask your next interview question. Keep the response focused and clear. Ask only one question at a time without any additional commentary or evaluation. The question should be relevant to the ${formData.jobRol} position.`;
+      const prompt = `Previous interview conversation:
+        ${chatHistory}
+
+        Candidate background:
+        Role: ${formData.jobRole}
+        Experience: ${formData.workExperience}
+        Skills: ${formData.skills}
+        Job Description: ${formData.jobDescription}
+
+        Candidate's last response: "${userMessage}"
+
+        You are the technical interviewer. Based on the candidate's response and background:
+        1. Briefly acknowledge their answer (1 sentence)
+        2. Ask your next technical question
+        
+        Guidelines:
+        - Focus on skills mentioned in their background
+        - Match questions to the job description requirements
+        - Keep questions relevant to their experience level
+        - Ask only ONE clear question
+        - Stay technical and specific
+        
+        Stay in character as the interviewer and keep the tone professional.`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
-      setMessages(prev => [...prev, {
-        role: 'Interviewer',
-        text: text
-      }]);
+      if (text && text.trim()) {
+        setMessages(prev => [...prev, {
+          role: 'Interviewer',
+          text: text
+        }]);
+      } else {
+        throw new Error('Empty response');
+      }
     } catch (err) {
       console.error('Error:', err);
-      setError('Failed to generate response. Please try again.');
+      setMessages(prev => [...prev, {
+        role: 'Interviewer',
+        text: `Thank you for that answer. Let's focus on another aspect of ${formData.jobRole}. Could you explain how you've used ${formData.skills.split(',')[0]} in your recent projects?`
+      }]);
     } finally {
       setLoading(false);
     }
   };
 
   const renderBackgroundForm = () => (
-    <form onSubmit={startInterview} className="space-y-8">
+    <form onSubmit={startInterview} className="space-y-6">
       <div className="bg-slate-800 rounded-lg p-6 space-y-6">
-        <h3 className="text-xl font-mono text-white mb-4">Background Information (Optional)</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-gray-300 mb-2">Job Role</label>
-            <input
-              type="text"
-              name="jobRole"
-              value={formData.jobRole}
-              onChange={handleInputChange}
-              className="w-full bg-slate-700 text-white rounded-lg p-3 border border-slate-600"
-              placeholder="Enter the job role (e.g., Software Developer, Product Manager)"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-300 mb-2">Work Experience</label>
-            <textarea
-              name="workExperience"
-              value={formData.workExperience}
-              onChange={handleInputChange}
-              className="w-full bg-slate-700 text-white rounded-lg p-3 border border-slate-600"
-              rows="4"
-              placeholder="Describe your work experience..."
-            />
-          </div>
-          <div>
-            <label className="block text-gray-300 mb-2">Skills</label>
-            <textarea
-              name="skills"
-              value={formData.skills}
-              onChange={handleInputChange}
-              className="w-full bg-slate-700 text-white rounded-lg p-3 border border-slate-600"
-              rows="4"
-              placeholder="List your relevant skills..."
-            />
-          </div>
-          <div>
-            <label className="block text-gray-300 mb-2">Target Job Description</label>
-            <textarea
-              name="jobDescription"
-              value={formData.jobDescription}
-              onChange={handleInputChange}
-              className="w-full bg-slate-700 text-white rounded-lg p-3 border border-slate-600"
-              rows="6"
-              placeholder="Paste or enter the job description here..."
-            />
-          </div>
+        <h3 className="text-xl font-mono text-white mb-4">Background Information</h3>
+        
+        <div>
+          <label className="block text-gray-300 mb-2">Job Role</label>
+          <input
+            type="text"
+            name="jobRole"
+            value={formData.jobRole}
+            onChange={handleInputChange}
+            className="w-full bg-slate-700 text-white rounded-lg p-3 border border-slate-600"
+            placeholder="e.g., Senior React Developer, Frontend Engineer"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-300 mb-2">Work Experience</label>
+          <textarea
+            name="workExperience"
+            value={formData.workExperience}
+            onChange={handleInputChange}
+            className="w-full bg-slate-700 text-white rounded-lg p-3 border border-slate-600"
+            rows="3"
+            placeholder="Describe your relevant work experience..."
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-300 mb-2">Skills</label>
+          <textarea
+            name="skills"
+            value={formData.skills}
+            onChange={handleInputChange}
+            className="w-full bg-slate-700 text-white rounded-lg p-3 border border-slate-600"
+            rows="3"
+            placeholder="List your technical skills (e.g., React, JavaScript, TypeScript, Node.js)"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-300 mb-2">Target Job Description</label>
+          <textarea
+            name="jobDescription"
+            value={formData.jobDescription}
+            onChange={handleInputChange}
+            className="w-full bg-slate-700 text-white rounded-lg p-3 border border-slate-600"
+            rows="4"
+            placeholder="Paste the job description you're targeting..."
+            required
+          />
         </div>
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-4 px-6 flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-4 px-6 flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? 'Starting Interview...' : 'Start Interview'}
         <ArrowRight className="w-5 h-5" />
@@ -167,24 +219,34 @@ const MockInterview = () => {
   );
 
   const renderChatInterface = () => (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="bg-slate-800 rounded-lg p-6">
         <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto">
           {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`p-4 rounded-lg ${
-                message.role === 'Interviewer'
-                  ? 'bg-slate-700/50 text-indigo-400'
-                  : 'bg-slate-700/30 text-gray-300'
-              }`}
-            >
-              <strong>{message.role}:</strong> {message.text}
+            <div key={index} className="flex gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                message.role === 'Interviewer' ? 'bg-blue-600' : 'bg-green-600'
+              }`}>
+                {message.role === 'Interviewer' ? '🤖' : '👤'}
+              </div>
+              <div className={`p-4 rounded-lg flex-1 ${
+                message.role === 'Interviewer' 
+                  ? 'bg-gray-700 text-white' 
+                  : 'bg-blue-600 text-white'
+              }`}>
+                {message.text}
+              </div>
             </div>
           ))}
+          
           {loading && (
-            <div className="bg-slate-700/50 text-indigo-400 p-4 rounded-lg">
-              <strong>Interviewer:</strong> Typing...
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                🤖
+              </div>
+              <div className="p-4 rounded-lg bg-gray-700 text-white animate-pulse">
+                Typing...
+              </div>
             </div>
           )}
         </div>
@@ -194,15 +256,15 @@ const MockInterview = () => {
             type="text"
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
-            placeholder="Type your response..."
-            className="flex-1 bg-slate-700 text-white rounded-lg p-3 border border-slate-600"
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            placeholder="Type your answer..."
+            className="flex-1 bg-gray-800 text-white rounded-lg p-3 border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            onKeyPress={(e) => e.key === 'Enter' && !loading && handleSendMessage()}
             disabled={loading}
           />
           <button
             onClick={handleSendMessage}
             disabled={loading || !userInput.trim()}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-5 h-5" />
           </button>
@@ -212,24 +274,20 @@ const MockInterview = () => {
   );
 
   return (
-    <div className="bg-slate-900 min-h-screen py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-mono text-white mb-4">
-            Interactive Mock Interview
-          </h2>
-          <p className="text-gray-400 text-lg">
-            Chat with an AI interviewer based on your experience and goals
-          </p>
+    <div className="bg-slate-900 min-h-screen p-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-white mb-2">Technical Interview Simulation</h1>
+          <p className="text-gray-400">Personalized interview based on your background</p>
         </div>
 
-        {!interviewStarted ? renderBackgroundForm() : renderChatInterface()}
-
         {error && (
-          <div className="mt-4 p-4 bg-red-900/50 border border-red-500 rounded-lg">
-            <p className="text-red-500 text-center">{error}</p>
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500 rounded-lg">
+            <p className="text-red-500 text-sm">{error}</p>
           </div>
         )}
+
+        {!interviewStarted ? renderBackgroundForm() : renderChatInterface()}
       </div>
     </div>
   );
